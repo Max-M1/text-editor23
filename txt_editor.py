@@ -1,11 +1,38 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QTextEdit
 from PyQt5.QtGui import QKeySequence
+from PyQt5.QtCore import QFile, QTextStream
+
+
+class TextEditorModel:
+    def __init__(self):
+        self.text = ""
+
+    def open_file(self, file_name):
+        file = QFile(file_name)
+        if file.open(QFile.ReadOnly | QFile.Text):
+            stream = QTextStream(file)
+            self.text = stream.readAll()
+            file.close()
+
+    def save_file(self, file_name):
+        file = QFile(file_name)
+        if file.open(QFile.WriteOnly | QFile.Text):
+            stream = QTextStream(file)
+            stream << self.text
+            file.close()
+
+    def set_text(self, text):
+        self.text = text
+
+    def get_text(self):
+        return self.text
 
 
 class TextEditor(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.model = TextEditorModel()
         self.initUI()
 
     def initUI(self):
@@ -59,6 +86,22 @@ class TextEditor(QMainWindow):
         redoAction.triggered.connect(self.text_edit.redo)
         redoAction.setShortcut(QKeySequence.Redo)
         editMenu.addAction(redoAction)
+
+    def open_file(self):
+        file_name, _ = QFileDialog.getOpenFileName(
+            self, "Вибрати файл", "", "Text Files (*.txt);;All Files (*)"
+        )
+        if file_name:
+            self.model.open_file(file_name)
+            self.text_edit.setText(self.model.get_text())
+
+    def save_file(self):
+        file_name, _ = QFileDialog.getSaveFileName(
+            self, "Зберегти файл", "", "Text Files (*.txt);;All Files (*)"
+        )
+        if file_name:
+            self.model.set_text(self.text_edit.toPlainText())
+            self.model.save_file(file_name)
 
 
 if __name__ == "__main__":
