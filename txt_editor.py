@@ -5,6 +5,7 @@ from PyQt5.QtCore import QFile, QTextStream
 
 
 class TextEditorModel:
+
     def __init__(self):
         self.text = ""
 
@@ -29,17 +30,48 @@ class TextEditorModel:
         return self.text
 
 
+class TextEditorController:
+
+    def __init__(self, model, view):
+        self.model = model
+        self.view = view
+        self.view.set_controller(self)
+
+    def open_file(self):
+        file_name, _ = QFileDialog.getOpenFileName(
+            self.view, "Вибрати файл", "", "Text Files (*.txt);;All Files (*)"
+        )
+        if file_name:
+            self.model.open_file(file_name)
+            self.view.update_text(self.model.get_text())
+
+    def save_file(self):
+        file_name, _ = QFileDialog.getSaveFileName(
+            self.view, "Зберегти файл", "", "Text Files (*.txt);;All Files (*)"
+        )
+        if file_name:
+            self.model.set_text(self.view.get_text())
+            self.model.save_file(file_name)
+
+    def update_text(self, text):
+        self.model.set_text(text)
+
+
 class TextEditor(QMainWindow):
+
     def __init__(self):
         super().__init__()
         self.model = TextEditorModel()
+        self.text_edit = QTextEdit(self)
+        self.setCentralWidget(self.text_edit)
+        self.controller = TextEditorController(self.model, self)
         self.initUI()
+
+    def set_controller(self, controller):
+        self.controller = controller
 
     def initUI(self):
         self.create_menu()
-
-        self.text_edit = QTextEdit(self)
-        self.setCentralWidget(self.text_edit)
 
         self.setGeometry(100, 100, 800, 600)
         self.setWindowTitle("Текстовий редактор")
@@ -51,11 +83,11 @@ class TextEditor(QMainWindow):
         editMenu = menuBar.addMenu("Редагувати")
 
         openAction = QAction("Відкрити", self)
-        openAction.triggered.connect(self.open_file)
+        openAction.triggered.connect(self.controller.open_file)
         fileMenu.addAction(openAction)
 
         saveAction = QAction("Зберегти", self)
-        saveAction.triggered.connect(self.save_file)
+        saveAction.triggered.connect(self.controller.save_file)
         fileMenu.addAction(saveAction)
 
         exitAction = QAction("Вийти", self)
@@ -64,7 +96,7 @@ class TextEditor(QMainWindow):
 
         cutAction = QAction("Вирізати", self)
         cutAction.triggered.connect(self.text_edit.cut)
-        cutAction.setShortcut(QKeySequence.Copy)
+        cutAction.setShortcut(QKeySequence.Cut)
         editMenu.addAction(cutAction)
 
         copyAction = QAction("Копіювати", self)
@@ -87,21 +119,11 @@ class TextEditor(QMainWindow):
         redoAction.setShortcut(QKeySequence.Redo)
         editMenu.addAction(redoAction)
 
-    def open_file(self):
-        file_name, _ = QFileDialog.getOpenFileName(
-            self, "Вибрати файл", "", "Text Files (*.txt);;All Files (*)"
-        )
-        if file_name:
-            self.model.open_file(file_name)
-            self.text_edit.setText(self.model.get_text())
+    def update_text(self, text):
+        self.text_edit.setText(text)
 
-    def save_file(self):
-        file_name, _ = QFileDialog.getSaveFileName(
-            self, "Зберегти файл", "", "Text Files (*.txt);;All Files (*)"
-        )
-        if file_name:
-            self.model.set_text(self.text_edit.toPlainText())
-            self.model.save_file(file_name)
+    def get_text(self):
+        return self.text_edit.toPlainText()
 
 
 if __name__ == "__main__":
