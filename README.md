@@ -1,1 +1,1 @@
-Updated README.md file
+Updated README.md file: додано інсталяційний пакет проекту додатку "Текстовий редатор"
